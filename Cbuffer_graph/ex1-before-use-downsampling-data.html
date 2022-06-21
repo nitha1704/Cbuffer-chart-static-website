@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>ex1 + chartbuffer</title>
+
+    <style>
+      canvas {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div style="width: 75%">
+      <div>
+        <canvas id="canvas"></canvas>
+        <button onclick="addItem()">ADD</button>
+      </div>
+    </div>
+
+    <script src="../node_modules/socket.io/client-dist/socket.io.js"></script>
+    <script src="../node_modules/CBuffer/cbuffer.js"></script>
+    <script src="../node_modules/chart.js/dist/Chart.bundle.js"></script>
+    <script src="../chartjs-plugin-downsample.js"></script>
+    <script>
+      // Websocket
+      var socket = io.connect("http://localhost:3000", {
+        transports: ["websocket"],
+      });
+      socket.on("chartData", (value) => {
+        console.log("value", value);
+        //addItemSocket(value);
+      });
+
+      socket.on("connect", () => {
+        console.log("client connected");
+      });
+
+      // Cbuffer mock data
+      const lengthBuffer = 50;
+      const mockLabels = Array.from({ length: lengthBuffer }, (_, index) => {
+        return "x" + index;
+      });
+      const mockRandomNumbers = Array.from(
+        { length: lengthBuffer },
+        (_, index) => {
+          return Math.floor(Math.random() * 100) + 1;
+        }
+      );
+      const mockNull = Array.from({ length: lengthBuffer }, (_, index) => {
+        return null;
+      });
+
+      // Cbuffer
+      let myBuff1 = CBuffer(lengthBuffer);
+      let labelsBuffer = CBuffer(lengthBuffer);
+      let mockArray = [];
+
+      labelsBuffer.push(...mockLabels);
+      myBuff1.push(...mockRandomNumbers);
+
+      let config = {
+        type: "line",
+        data: {
+          labels: labelsBuffer.data,
+          datasets: [
+            {
+              labels: "CH1",
+              data: myBuff1.data,
+              backgroundColor: [
+                "rgba(255, 99, 132, 0.2)",
+                "rgba(255, 159, 64, 0.2)",
+                "rgba(255, 205, 86, 0.2)",
+                "rgba(75, 192, 192, 0.2)",
+                "rgba(54, 162, 235, 0.2)",
+                "rgba(153, 102, 255, 0.2)",
+                "rgba(201, 203, 207, 0.2)",
+              ],
+              borderColor: [
+                "rgb(255, 99, 132)",
+                "rgb(255, 159, 64)",
+                "rgb(255, 205, 86)",
+                "rgb(75, 192, 192)",
+                "rgb(54, 162, 235)",
+                "rgb(153, 102, 255)",
+                "rgb(201, 203, 207)",
+              ],
+            },
+          ],
+        },
+        options: {
+          //   downsample: {
+          //     threshold: 120,
+          //     auto: true,
+          //     enabled: true,
+          //     onInit: true,
+          //     preferOriginalData: false,
+          //     restoreOriginalData: true,
+          //   },
+        },
+      };
+
+      //   ChartJS
+      var ctx = document.getElementById("canvas").getContext("2d");
+      var chartMock = new Chart(ctx, config);
+
+      function addItem() {
+        let randomNumber = Math.floor(Math.random() * 100) + 1;
+        myBuff1.push(randomNumber);
+        labelsBuffer.push("qq");
+        let ch1Data = config.data.datasets[0].data;
+
+        console.log("myBuff1", myBuff1);
+        console.log("ch1Data", ch1Data);
+
+        chartMock.update();
+      }
+      //   setInterval(() => {
+      //     addItem();
+      //   }, 5);
+
+      function addItemSocket(value) {
+        myBuff1.push(value);
+        labelsBuffer.push("qq");
+        chartMock.update();
+      }
+
+      console.log("config", config);
+      console.log("chartMock", chartMock);
+    </script>
+  </body>
+</html>
